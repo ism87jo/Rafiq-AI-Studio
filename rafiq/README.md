@@ -10,13 +10,13 @@ Install Git, PowerShell 7 and 64-bit Python 3.13 with the Windows Python launche
 git clone https://github.com/ism87jo/Rafiq-AI-Studio.git
 cd Rafiq-AI-Studio
 git remote add upstream https://github.com/Comfy-Org/ComfyUI.git
-git switch develop
+git switch --track origin/rafiq/foundation
 ./rafiq/setup.ps1
 ./.venv/Scripts/python.exe rafiq/smoke.py
 ./rafiq/start.ps1
 ```
 
-Open <http://127.0.0.1:8188>. Stop the server with Ctrl+C. Setup downloads Python packages. The smoke test starts a separate CPU process, checks `GET /system_stats` and terminates the process. It requires no model weights. Before the foundation PR is merged, switch to `rafiq/foundation` to find these scripts.
+Open <http://127.0.0.1:8188>. Stop the server with Ctrl+C. Setup downloads Python packages. The smoke test starts a separate CPU process, checks `GET /system_stats` and terminates the process. It requires no model weights. After the foundation PR is merged, use `develop` for setup.
 
 ## Architecture and first release
 
@@ -30,7 +30,7 @@ Open <http://127.0.0.1:8188>. Stop the server with Ctrl+C. Setup downloads Pytho
 
 [ComfyUI core](https://github.com/Comfy-Org/ComfyUI/blob/master/LICENSE) and [ComfyUI frontend](https://github.com/Comfy-Org/ComfyUI_frontend) use GPL v3. [Comfy Desktop](https://github.com/Comfy-Org/Comfy-Desktop#license) offers AGPL v3 or later and commercial terms, with an MIT exception for its bridge types package. This repository uses the upstream core license.
 
-[LTX-2 weights](https://huggingface.co/Lightricks/LTX-2/blob/main/LICENSE) have separate community terms. Review the license at the exact revision, its use restrictions and any commercial licensing requirements. Review each accompanying encoder, VAE, LoRA and other model artifact independently before redistribution or commercial release.
+[LTX-2 weights](https://github.com/Lightricks/LTX-2/blob/main/LICENSE-2) have separate community terms. The [LTX-2 inference and training code](https://github.com/Lightricks/LTX-2/blob/main/LICENSE) uses Apache 2.0. Review the license at the exact revision, its use restrictions and any commercial licensing requirements. Review each accompanying encoder, VAE, LoRA and other model artifact independently before redistribution or commercial release.
 
 ## العربية
 
