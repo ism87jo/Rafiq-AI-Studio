@@ -44,11 +44,11 @@ def main():
                         device["type"] == "cpu" for device in stats["devices"]
                     ):
                         raise RuntimeError(f"Unexpected system_stats response: {stats}")
-                    print("ComfyUI CPU smoke test passed.")
+                    sys.stdout.write("ComfyUI CPU smoke test passed.\n")
                     return
                 raise RuntimeError(f"ComfyUI did not become ready (exit status {server.poll()}).")
             except Exception:
-                print(log_path.read_text(encoding="utf-8", errors="replace"), file=sys.stderr)
+                sys.stderr.write(log_path.read_text(encoding="utf-8", errors="replace"))
                 raise
             finally:
                 if server.poll() is None:
