@@ -1,5 +1,9 @@
 # Rafiq AI Studio
 
+The runnable bilingual production MVP is in **[studio/README.md](studio/README.md)**. It adds project/storyboard persistence, character/location records, local ComfyUI jobs and real FFmpeg MP4 exports in a separate lightweight environment. See [implementation and repository review](docs/IMPLEMENTATION.md), [model/license review](docs/MODELS.md), and [validation results and GPU limitations](docs/VALIDATION.md).
+
+النسخة العملية الأولى وشرح تشغيلها: **[دليل الاستوديو](studio/README.md)**. تشمل إدارة المشروع والمشاهد والوسائط والتصدير المحلي؛ اختبار التوليد العصبي ما زال ينتظر GPU مناسبًا. يتوفر [دفتر اختبار GPU مجاني عند توفره](notebooks/Rafiq_First_GPU_Test.ipynb).
+
 Rafiq AI Studio extends ComfyUI toward a bilingual image, video and audio workspace. This foundation adds a Windows CPU setup and a model-free startup check. The upstream web interface is available after startup.
 
 ## Windows

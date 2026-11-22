@@ -24,4 +24,7 @@ web_custom_versions/
 filtered-openapi.yaml
 uv.lock
 .comfy_environment
+/rafiq/studio/.preview-data/
+/rafiq/studio/.qa/
+/.studio-venv/
 /previews/
