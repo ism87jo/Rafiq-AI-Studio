@@ -65,7 +65,7 @@ def build_graph(project, scene, reference_name=None, prefix="rafiq/shot"):
         "9": node("VAEDecode", samples=["8", 0], vae=["3", 0]),
         "10": node("CreateVideo", images=["9", 0], fps=settings["fps"]),
         "11": node("SaveVideo", video=["10", 0], filename_prefix=prefix,
-                   format={"format": "mp4", "codec": {"codec": "h264"}}),
+                   format="mp4", **{"format.codec": "h264"}),
     }
     inputs = dict(width=settings["width"], height=settings["height"], length=frames, batch_size=1)
     if settings["preset"] == "wan22-5b":
