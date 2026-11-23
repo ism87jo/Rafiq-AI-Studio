@@ -1,10 +1,12 @@
 import json
+import hashlib
 import shutil
 import subprocess
 import tempfile
 import time
 import unittest
 import wave
+import zipfile
 from io import BytesIO
 from pathlib import Path
 
@@ -16,6 +18,7 @@ from rafiq.studio.app import create_app
 from rafiq.studio.comfy import ComfyClient
 from rafiq.studio.example import first_chapter
 from rafiq.studio.media import probe
+from rafiq.studio.portable import canonical, inspect_request, render_request
 from rafiq.studio.store import Conflict, Store
 from rafiq.studio.workflows import PRESETS, build_graph, frame_count
 
@@ -275,6 +278,177 @@ class StudioIntegrationTests(unittest.TestCase):
         response = self.post(f"/api/projects/{self.pid}/voice/{sid}")
         self.assertEqual(response.status_code, 422)
         self.assertIn("voice reference", response.json()["detail"])
+
+    def gpu_request(self):
+        response = self.post(f"/api/projects/{self.pid}/gpu-request/{self.sid}", json={"revision": self.project["revision"]})
+        self.assertEqual(response.status_code, 201, response.text)
+        job = response.json()
+        bundle = self.client.get(f"/api/jobs/{job['id']}/gpu-request")
+        self.assertEqual(bundle.status_code, 200)
+        return job, bundle.content
+
+    def gpu_result(self, bundle):
+        source = Path(self.directory.name) / "request.zip"
+        target = Path(self.directory.name) / "result.zip"
+        source.write_bytes(bundle)
+        result = render_request(source, target, self.engine)
+        return result, target.read_bytes()
+
+    def upload_result(self, content, project_id=None):
+        return self.post(f"/api/projects/{project_id or self.pid}/gpu-result",
+                         files={"file": ("gpu-result.zip", content, "application/zip")})
+
+    def rewrite_bundle(self, content, change):
+        with zipfile.ZipFile(BytesIO(content)) as archive:
+            members = {name: archive.read(name) for name in archive.namelist()}
+        change(members)
+        target = BytesIO()
+        with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
+            for name, value in members.items():
+                archive.writestr(name, value)
+        return target.getvalue()
+
+    def test_portable_export_needs_no_gpu_and_does_not_include_book_or_voices(self):
+        self.fixture.cpu = True
+        job, bundle = self.gpu_request()
+        request = inspect_request(BytesIO(bundle))
+        self.assertEqual(job["state"], "awaiting_gpu")
+        self.assertEqual(self.fixture.graphs, [])
+        self.assertEqual(request["project"]["script"], "")
+        self.assertEqual(len(request["project"]["scenes"]), 1)
+        self.assertEqual(len(request["project"]["characters"]), 1)
+        self.assertEqual(request["project"]["scenes"][0]["seed"], 41201)
+        with zipfile.ZipFile(BytesIO(bundle)) as archive:
+            self.assertEqual(archive.namelist(), ["request.json"])
+
+    def test_gpu_notebook_can_be_downloaded_from_the_app(self):
+        response = self.client.get("/api/gpu-notebook")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Rafiq_GPU_Job.ipynb", response.headers["content-disposition"])
+        self.assertEqual(json.loads(response.content)["nbformat"], 4)
+
+    def test_portable_roundtrip_is_idempotent_and_requires_explicit_selection(self):
+        job, bundle = self.gpu_request()
+        _, output = self.gpu_result(bundle)
+        self.project["scenes"][0]["title"] = "Updated after export"
+        self.save()
+        response = self.upload_result(output)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertTrue(response.json()["imported"])
+        completed = response.json()["job"]
+        self.assertEqual(completed["state"], "succeeded")
+        current = self.app.state.store.project(self.pid)
+        self.assertIsNone(current["scenes"][0]["video_asset_id"])
+        self.assertEqual(current["scenes"][0]["title"], "Updated after export")
+        asset_count = len(self.app.state.store.list_assets(self.pid))
+        again = self.upload_result(output)
+        self.assertEqual(again.status_code, 200, again.text)
+        self.assertFalse(again.json()["imported"])
+        self.assertEqual(len(self.app.state.store.list_assets(self.pid)), asset_count)
+        self.assertIsNone(self.quote()["cost"]["estimated_seconds"])
+        use = self.post(f"/api/jobs/{job['id']}/apply", json={"revision": self.project["revision"]})
+        self.assertEqual(use.status_code, 200, use.text)
+        self.assertEqual(use.json()["scenes"][0]["video_asset_id"], completed["output_asset_id"])
+
+    def test_portable_image_conditioning_keeps_original_request_hash(self):
+        image = BytesIO()
+        Image.new("RGB", (96, 64), "blue").save(image, format="PNG")
+        asset = self.upload("image", image.getvalue(), "reference.png", "image/png")
+        self.project["scenes"][0].update(mode="image", reference_asset_id=asset["id"])
+        self.save()
+        _, bundle = self.gpu_request()
+        request = inspect_request(BytesIO(bundle))
+        expected_digest = hashlib.sha256(canonical(request)).hexdigest()
+        result, output = self.gpu_result(bundle)
+        self.assertEqual(result["request_sha256"], expected_digest)
+        self.assertEqual(len(self.fixture.uploads), 1)
+        self.assertEqual(self.fixture.graphs[0]["12"]["inputs"]["image"], "rafiq/reference.png")
+        response = self.upload_result(output)
+        self.assertEqual(response.status_code, 200, response.text)
+
+    def test_portable_result_tampering_keeps_job_waiting_and_leaves_no_file(self):
+        job, bundle = self.gpu_request()
+        _, output = self.gpu_result(bundle)
+
+        def corrupt(members):
+            members["clip.mp4"] = b"replaced video"
+
+        response = self.upload_result(self.rewrite_bundle(output, corrupt))
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(self.app.state.store.job(job["id"])["state"], "awaiting_gpu")
+        self.assertEqual(list(self.app.state.store.assets.iterdir()), [])
+
+    def test_portable_request_tampering_is_rejected_even_with_recomputed_checksum(self):
+        _, bundle = self.gpu_request()
+        _, output = self.gpu_result(bundle)
+
+        def corrupt(members):
+            request = json.loads(members["request.json"])
+            request["project"]["scenes"][0]["prompt"] = "Different scene"
+            members["request.json"] = canonical(request)
+            result = json.loads(members["result.json"])
+            result["request_sha256"] = hashlib.sha256(canonical(request)).hexdigest()
+            members["result.json"] = canonical(result)
+
+        response = self.upload_result(self.rewrite_bundle(output, corrupt))
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(self.app.state.store.list_assets(self.pid), [])
+
+    def test_portable_result_cannot_be_imported_into_another_project(self):
+        _, bundle = self.gpu_request()
+        _, output = self.gpu_result(bundle)
+        other = self.post("/api/projects", json={"title": "Other project"}).json()
+        response = self.upload_result(output, other["id"])
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(self.app.state.store.list_assets(other["id"]), [])
+
+    def test_portable_zip_rejects_paths_links_and_oversized_metadata(self):
+        _, bundle = self.gpu_request()
+        _, output = self.gpu_result(bundle)
+        for name in ("../escape", "/absolute", "script.py"):
+            with self.subTest(name=name):
+                response = self.upload_result(self.rewrite_bundle(output, lambda members: members.update({name: b"not allowed"})))
+                self.assertEqual(response.status_code, 422)
+        response = self.upload_result(self.rewrite_bundle(output, lambda members: members.update({"result.json": b"x" * (2 * 1024**2 + 1)})))
+        self.assertEqual(response.status_code, 422)
+        linked = BytesIO()
+        with zipfile.ZipFile(linked, "w") as archive:
+            info = zipfile.ZipInfo("clip.mp4")
+            info.external_attr = (0o120777 << 16)
+            archive.writestr(info, "/some/local/file")
+        self.assertEqual(self.upload_result(linked.getvalue()).status_code, 422)
+
+    def test_portable_runner_stops_without_gpu_and_export_checks_revision(self):
+        _, bundle = self.gpu_request()
+        self.fixture.cpu = True
+        with self.assertRaisesRegex(ValueError, "accelerator"):
+            self.gpu_result(bundle)
+        self.assertFalse((Path(self.directory.name) / "result.zip").exists())
+        self.assertEqual(self.fixture.graphs, [])
+        response = self.post(f"/api/projects/{self.pid}/gpu-request/{self.sid}", json={"revision": self.project["revision"] + 1})
+        self.assertEqual(response.status_code, 409)
+
+    def test_portable_runner_repackages_success_without_another_prompt(self):
+        _, bundle = self.gpu_request()
+        self.gpu_result(bundle)
+        source = Path(self.directory.name) / "request.zip"
+        target = Path(self.directory.name) / "result-copy.zip"
+        self.fixture.cpu = True
+        result = render_request(source, target, self.engine)
+        self.assertTrue(target.is_file())
+        self.assertEqual(len(self.fixture.graphs), 1)
+        self.assertEqual(result["devices"][0]["type"], "cuda")
+
+    def test_portable_runner_does_not_resubmit_a_failed_or_uncertain_prompt(self):
+        _, bundle = self.gpu_request()
+        self.fixture.fail = True
+        with self.assertRaisesRegex(ValueError, "execution failed"):
+            self.gpu_result(bundle)
+        source = Path(self.directory.name) / "request.zip"
+        target = Path(self.directory.name) / "retry.zip"
+        with self.assertRaisesRegex(Conflict, "no new prompt"):
+            render_request(source, target, self.engine)
+        self.assertEqual(len(self.fixture.graphs), 1)
 
 
 class StoreAndWorkflowTests(unittest.TestCase):

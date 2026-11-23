@@ -145,6 +145,42 @@ class Store:
             raise KeyError("Job not found")
         return json.loads(row["body"])
 
+    def create_portable_job(self, project, scene, request, request_digest, reference_asset_id):
+        now = time.time()
+        job = dict(id=request["id"], project_id=project["id"], scene_id=scene["id"], kind="generate",
+                   execution="portable", state="awaiting_gpu", progress=0, error=None,
+                   output_asset_id=None, prompt_id=None, elapsed_seconds=None, created=now, updated=now,
+                   payload=dict(project=project, scene=scene, request=request, request_digest=request_digest,
+                                reference_asset_id=reference_asset_id))
+        with self.connect() as db:
+            db.execute("INSERT INTO jobs VALUES (?,?,?,?,?,?,?,?)", (
+                job["id"], project["id"], scene["id"], "generate", "awaiting_gpu", json.dumps(job), now, now,
+            ))
+        return job
+
+    def complete_portable_job(self, job_id, project_id, request_digest, result, asset):
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT body FROM jobs WHERE id=? AND project_id=?", (job_id, project_id)).fetchone()
+            if row is None:
+                raise KeyError("GPU job not found in this project")
+            job = json.loads(row["body"])
+            if job.get("execution") != "portable" or job["payload"]["request_digest"] != request_digest:
+                raise Conflict("The result does not match the exported request")
+            if job["state"] == "succeeded" and job.get("result_digest") == result["video_sha256"]:
+                return job, False
+            if job["state"] != "awaiting_gpu":
+                raise Conflict("This GPU job already has a different result")
+            db.execute("INSERT INTO assets VALUES (?,?,?,?,?,?)", (
+                asset["id"], project_id, "video", asset["filename"], asset["original_name"], json.dumps(asset["metadata"]),
+            ))
+            job.update(state="succeeded", progress=100, output_asset_id=asset["id"],
+                       result_digest=result["video_sha256"], elapsed_seconds=result["elapsed_seconds"],
+                       generation_seconds=result["generation_seconds"], gpu_report=result, updated=time.time())
+            db.execute("UPDATE jobs SET state=?,body=?,updated=? WHERE id=?",
+                       (job["state"], json.dumps(job), job["updated"], job_id))
+        return job, True
+
     def jobs(self, project_id=None):
         with self.connect() as db:
             query = "SELECT body FROM jobs"

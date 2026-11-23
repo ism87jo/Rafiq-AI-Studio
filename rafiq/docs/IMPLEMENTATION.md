@@ -50,3 +50,9 @@ The laptop can remain the studio/editing client while a future approved GPU mach
 The seed project contains six draft shots totaling 33 planned seconds: courtyard, Hamza's entrance, the bird, the father's answer, Othman/Nizar's entrance, and the group. It is an opening treatment based on the saved first-chapter draft, not an adaptation of the entire chapter. Appearance/wardrobe are editable fictional production choices. The seed does not contain the complete unpublished book.
 
 The first real GPU gate uses a single character without dialogue. Next comes two characters conditioned on one approved composed reference image. The four-character wide shot is deferred until those pass. Off-screen dialogue and reaction shots can reduce lip-sync demands during the first edit. Visual continuity needs human review; seeds and saved descriptions alone cannot guarantee it.
+
+## Version 0.2 — 23 November 2026
+
+Implemented file-based handoff between the lightweight laptop studio and an interactive GPU notebook/owned GPU machine. One-scene request ZIPs preserve visual settings and a hashed I2V image without carrying the entire book or voice library. Result ZIPs return the MP4 and render measurements to the original job; imports are atomic, project-scoped and repeat-safe. The existing explicit take-selection step remains required.
+
+This is an additional path to the first neural acceptance test, not a hosted GPU service. It leaves external HTTP engines and paid provisioning disabled. The interactive runner retains its job database and media so a retry cannot silently resubmit an already recorded prompt; successful output can be repackaged without inference. Laptop cost estimates exclude these external-device measurements. The real GPU acceptance milestone remains open until an actual model run passes.

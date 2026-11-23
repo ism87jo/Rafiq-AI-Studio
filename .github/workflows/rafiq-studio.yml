@@ -2,10 +2,10 @@ name: Rafiq Studio integration
 on:
   pull_request:
     branches: [develop]
-    paths: ['rafiq/studio/**', '.github/workflows/rafiq-studio.yml']
+    paths: ['rafiq/studio/**', 'rafiq/notebooks/**', '.github/workflows/rafiq-studio.yml']
   push:
     branches: [develop, feature/rafiq-studio-mvp]
-    paths: ['rafiq/studio/**', '.github/workflows/rafiq-studio.yml']
+    paths: ['rafiq/studio/**', 'rafiq/notebooks/**', '.github/workflows/rafiq-studio.yml']
   workflow_dispatch:
 
 permissions:

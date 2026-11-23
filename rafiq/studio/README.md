@@ -1,4 +1,4 @@
-# Rafiq AI Studio · MVP 0.1
+# Rafiq AI Studio · MVP 0.2
 
 A local Arabic/English production workspace for Rafiq Al-Basira. The studio uses its own project database and talks to the included ComfyUI engine through loopback HTTP. It does not provision cloud machines or call paid video APIs.
 
@@ -34,13 +34,35 @@ The web studio and GPU engine use separate Python environments. The earlier `raf
 4. In the studio, check Engine & cost. Preflight checks accelerator type, native nodes, model filenames and rejects API nodes. It does not validate model quality, hash identity, available VRAM or performance.
 5. Start with one short shot. Estimate, inspect the composed prompt, approve, then review the resulting MP4 before selecting it for a scene.
 
-Only loopback ComfyUI endpoints are supported by this MVP. `RAFIQ_COMFY_URL` may select another loopback port. External engines and paid provisioning are disabled. The included `benchmark.py` can run a real shot through the same graph/worker path and produce a timing report:
+Only loopback ComfyUI HTTP endpoints are supported by this MVP. `RAFIQ_COMFY_URL` may select another loopback port. External HTTP engines and paid provisioning are disabled. The included `benchmark.py` can run a real shot through the same graph/worker path and produce a timing report:
 
 ```bash
 python -m rafiq.studio.benchmark --preset wan22-5b --seconds 1 --steps 8 --run
 ```
 
 For a weak laptop, use the prepared [interactive Colab test notebook](../notebooks/Rafiq_First_GPU_Test.ipynb) if a free GPU is available. The notebook runs code inside Colab; it does not expose the studio or create a public tunnel. It has **not yet passed a real GPU run**. Do not buy compute units for this test.
+
+## Use your laptop with another GPU — version 0.2
+
+The studio can now export an individual scene to a portable ZIP, then import the completed take from another machine. This does not start a cloud session, provision hardware or submit a render.
+
+1. Choose the model, frame size, duration, steps, seed and scene reference in the studio. For the first test, use 1 second, 320×192, 8 steps. Choose Wan 2.2 for image conditioning, or the smaller Wan 2.1 text-only preset.
+2. Click **Prepare GPU job / تجهيز المشهد لجهاز GPU** and download the scene ZIP and GPU notebook. The package contains one visual scene, its relevant character/location descriptions and its selected I2V image. It excludes the full script, dialogue, voice samples and unrelated media.
+3. Open [Rafiq_GPU_Job.ipynb](../notebooks/Rafiq_GPU_Job.ipynb) in Colab if a free GPU session is available, or run the CLI on your own GPU. Verify your account is not consuming paid compute units before starting. Upload the request ZIP and follow the notebook cells. The notebook downloads just the preset's required model files and records exact source revisions/hashes.
+4. Download the result ZIP. In **Production & export**, import it into the original project. Review the playable take and explicitly select it for the scene. Import does not overwrite script edits or select the take automatically.
+
+On a configured GPU machine, inspect before executing:
+
+```bash
+python -m rafiq.studio.portable scene-request.zip
+python -m rafiq.studio.portable scene-request.zip --run --output gpu-result.zip
+```
+
+The runner rebuilds a native allowed preset; it does not execute arbitrary workflow graphs or code from the archive. Native paid/API nodes are rejected. Only bounded, allowlisted ZIP members are read, and the request/reference/video hashes must match. These integrity checks do not attest artistic quality, actual model weights or third-party GPU authenticity; the notebook's separate model manifest records its downloaded files.
+
+The GPU machine retains a `rafiq-gpu-work-<request-id>` folder beside the output. Repackaging an already successful take does not submit another prompt. If a previous submission failed or was interrupted, the runner stops and preserves the prompt ID/state; check ComfyUI history before deciding to export a new request. Completed work can be downloaded without restarting inference. Colab session deletion also deletes that work folder, so save the result before disconnecting.
+
+Imported GPU timings are recorded with their job, but are excluded from the laptop's local electricity estimates. Remote runtime/cost stays unknown until the actual GPU and its rates are measured. No free resource availability, identity continuity or GPU generation success is claimed by the transfer tests.
 
 ## What is working
 

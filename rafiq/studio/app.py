@@ -17,6 +17,7 @@ from .comfy import ComfyClient
 from .example import first_chapter
 from .media import normalize_audio, probe
 from .models import Project, Record
+from .portable import create_request, import_result, request_archive
 from .store import Conflict, Store
 from .worker import Worker
 from .workflows import PRESETS, build_graph, estimate, scene_prompt
@@ -77,7 +78,7 @@ def create_app(data_dir=None, engine=None, recover=True):
         yield
         worker.close()
 
-    app = FastAPI(title="Rafiq AI Studio", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Rafiq AI Studio", version="0.2.0", lifespan=lifespan)
     app.state.store = store
     app.state.worker = worker
     allowed_hosts = ["localhost", "127.0.0.1", "[::1]", "testserver"]
@@ -117,7 +118,7 @@ def create_app(data_dir=None, engine=None, recover=True):
 
     @app.get("/api/bootstrap")
     def bootstrap():
-        return dict(token=session_token, version="0.1.0", presets=PRESETS,
+        return dict(token=session_token, version="0.2.0", presets=PRESETS,
                     ffmpeg=bool(shutil.which("ffmpeg") and shutil.which("ffprobe")),
                     voice_configured=bool(voice_python and Path(voice_python).is_file()),
                     engine_url=comfy.url, cloud_enabled=False)
@@ -217,6 +218,32 @@ def create_app(data_dir=None, engine=None, recover=True):
             if scene["id"] == scene_id:
                 return scene
         raise KeyError("Scene not found")
+
+    @app.post("/api/projects/{project_id}/gpu-request/{scene_id}", status_code=201)
+    def export_gpu_request(project_id: str, scene_id: str, body: Apply):
+        project = store.project(project_id)
+        if project["revision"] != body.revision:
+            raise Conflict("Reload the project before exporting this scene")
+        job = create_request(store, project, find_scene(project, scene_id))
+        return public_job(job)
+
+    @app.get("/api/jobs/{job_id}/gpu-request")
+    def download_gpu_request(job_id: str):
+        return FileResponse(request_archive(store, store.job(job_id)), filename=f"rafiq-gpu-{job_id}.zip")
+
+    @app.post("/api/projects/{project_id}/gpu-result")
+    def import_gpu_result(project_id: str, file: UploadFile = File()):
+        store.project(project_id)
+        try:
+            job, fresh = import_result(store, project_id, file.file)
+            return dict(job=public_job(job), imported=fresh)
+        finally:
+            file.file.close()
+
+    @app.get("/api/gpu-notebook")
+    def gpu_notebook():
+        path = Path(__file__).parents[1] / "notebooks" / "Rafiq_GPU_Job.ipynb"
+        return FileResponse(path, filename=path.name)
 
     @app.get("/api/projects/{project_id}/readiness/{scene_id}")
     def readiness(project_id: str, scene_id: str):

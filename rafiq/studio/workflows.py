@@ -83,6 +83,8 @@ def estimate(project, scene, jobs):
     signature = {key: settings[key] for key in ("preset", "width", "height", "fps", "steps", "cfg")}
     measured = []
     for job in jobs:
+        if job.get("execution") == "portable":
+            continue
         if job["kind"] != "generate" or job["state"] != "succeeded":
             continue
         payload = job["payload"]

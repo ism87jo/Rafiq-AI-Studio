@@ -29,3 +29,11 @@ The development machine has no exposed NVIDIA GPU, PyTorch, model weights or run
 The Colab notebook's code cells compile, and it reuses the production graph/worker. It still requires a real free GPU session, dependency/model installation and a passing output. It must not be described as GPU-tested until a benchmark report and playable output exist.
 
 The optional offline Arabic speech adapter has not been run with weights. No generated voice, lip sync or character-identity guarantee has passed acceptance. No paid service, GPU rental, cloud machine or paid API was started.
+
+## Version 0.2 checks — 23 November 2026
+
+All 28 unittest cases pass locally. The suite now includes portable scene export, real MP4 result packaging/import through a labelled ComfyUI protocol fixture, exact I2V reference binding, result replay without duplicate assets, retained project edits, request/video tamper rejection, cross-project isolation, ZIP member/size/link checks, missing-GPU blocking, revision checks, and no automatic resubmission after a recorded failure. Successful output can be repackaged with the GPU engine unavailable. Notebook code compilation and the downloadable notebook endpoint are checked as well.
+
+Browser acceptance passed on the actual application: exported and downloaded a scene ZIP, processed that downloaded request using the labelled protocol fixture and an FFmpeg clip marked `PROTOCOL TEST`, imported the result ZIP through the file input, reviewed the completed job, explicitly selected the take, and checked the English transfer controls. The selected video loaded with readyState 4 and duration 1 second. This was done in a separate diagnostic project; the chapter project has no generated takes. The interface was restored to Arabic and the chapter project. JavaScript syntax, Python compilation and whitespace checks pass locally.
+
+These checks validate the transfer and recovery workflow, not neural inference. The public Colab notebook opens, but this browser is not signed into Google. No GPU session has been started and model execution is still pending authentication and free GPU availability.
