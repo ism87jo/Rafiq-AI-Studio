@@ -40,7 +40,7 @@ Only loopback ComfyUI HTTP endpoints are supported by this MVP. `RAFIQ_COMFY_URL
 python -m rafiq.studio.benchmark --preset wan22-5b --seconds 1 --steps 8 --run
 ```
 
-For a weak laptop, use the prepared [interactive Colab test notebook](../notebooks/Rafiq_First_GPU_Test.ipynb) if a free GPU is available. The notebook runs code inside Colab; it does not expose the studio or create a public tunnel. It has **not yet passed a real GPU run**. Do not buy compute units for this test.
+For a weak laptop, use the prepared [interactive Colab test notebook](../notebooks/Rafiq_First_GPU_Test.ipynb) if a free GPU is available. The notebook runs code inside Colab; it does not expose the studio or create a public tunnel. Wan 2.1 passed real 1.0625-second and 5.0625-second T4 runs at 320×192; see the [measured results and visual limits](../docs/GPU_BENCHMARK_2026-11-23.md). Wan 2.2 and final film quality remain unverified. Do not buy compute units for this test.
 
 ## Use your laptop with another GPU — version 0.2
 
@@ -88,7 +88,7 @@ python -m unittest discover -s rafiq/studio/tests -v
 node --check rafiq/studio/web/studio.js
 ```
 
-The tests use an explicitly labelled ComfyUI protocol fixture plus real FFmpeg encodes/decodes. They do **not** demonstrate neural inference. See [the validation record](../docs/VALIDATION.md) for the separate browser export test and the blocked GPU milestone.
+The lightweight tests use an explicitly labelled ComfyUI protocol fixture plus real FFmpeg encodes/decodes. They do **not** demonstrate neural inference. The Windows CPU smoke workflow separately checks actual native CreateVideo/SaveVideo H.264 output, without model weights. See [the validation record](../docs/VALIDATION.md) and the separate [real T4 benchmark](../docs/GPU_BENCHMARK_2026-11-23.md).
 
 The default server binds to loopback. Local-session tokens, same-origin mutation checks, host validation, per-project asset checks and sanitized uploads protect the single-user workflow. This is not Internet-facing authentication or a tenant isolation system. Run one studio process per data folder. Commercial deployment requires the next architecture stages in [the implementation plan](../docs/IMPLEMENTATION.md).
 

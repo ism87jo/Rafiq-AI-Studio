@@ -14,7 +14,7 @@ PRESETS = {
         "model": "wan2.1_t2v_1.3B_fp16.safetensors", "vae": "wan_2.1_vae.safetensors",
         "encoder": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "fps": 16,
         "source": "https://docs.comfy.org/tutorials/video/wan/wan-video",
-        "status": "integration-unverified-on-gpu",
+        "status": "gpu-smoke-passed-t4-320x192",
     },
 }
 
