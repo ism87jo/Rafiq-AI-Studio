@@ -54,7 +54,7 @@ def build_graph(project, scene, reference_name=None, prefix="rafiq/shot"):
 
     graph = {
         "1": node("UNETLoader", unet_name=preset["model"], weight_dtype="default"),
-        "2": node("CLIPLoader", clip_name=preset["encoder"], type="wan", device="cpu"),
+        "2": node("CLIPLoader", clip_name=preset["encoder"], type="wan", device="default"),
         "3": node("VAELoader", vae_name=preset["vae"]),
         "4": node("CLIPTextEncode", text=scene_prompt(project, scene), clip=["2", 0]),
         "5": node("CLIPTextEncode", text=settings["negative_prompt"], clip=["2", 0]),
