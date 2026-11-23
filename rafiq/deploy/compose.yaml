@@ -1,0 +1,39 @@
+services:
+  studio:
+    build:
+      context: ../..
+      dockerfile: rafiq/deploy/Dockerfile
+    restart: unless-stopped
+    environment:
+      RAFIQ_ALLOWED_HOSTS: "${STUDIO_HOST:?Set STUDIO_HOST in .env}"
+    volumes:
+      - studio_data:/data
+    networks:
+      - studio_private
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      STUDIO_HOST: "${STUDIO_HOST:?Set STUDIO_HOST in .env}"
+      STUDIO_USER: "${STUDIO_USER:?Set STUDIO_USER in .env}"
+      STUDIO_PASSWORD_HASH: "${STUDIO_PASSWORD_HASH:?Set STUDIO_PASSWORD_HASH in .env}"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - proxy_data:/data
+      - proxy_config:/config
+    networks:
+      - default
+      - studio_private
+
+networks:
+  studio_private:
+    internal: true
+
+volumes:
+  studio_data:
+  proxy_data:
+  proxy_config:

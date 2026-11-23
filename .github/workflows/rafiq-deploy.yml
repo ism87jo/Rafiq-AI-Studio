@@ -1,0 +1,46 @@
+name: Rafiq private deployment
+on:
+  pull_request:
+    branches: [develop]
+    paths: ['rafiq/deploy/**', 'rafiq/studio/**', 'rafiq/notebooks/**', '.dockerignore', '.github/workflows/rafiq-deploy.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: rafiq/deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start private deployment with test credentials
+        run: |
+          hash=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext rafiq-test-password)
+          printf "STUDIO_HOST=localhost\nSTUDIO_USER=smoke\nSTUDIO_PASSWORD_HASH='%s'\n" "$hash" > .env
+          docker compose up --build -d
+      - name: Verify HTTPS, access control and project persistence
+        run: |
+          touch /tmp/rafiq-test-ca.crt
+          timeout 30 bash -c 'until docker compose cp proxy:/data/caddy/pki/authorities/local/root.crt /tmp/rafiq-test-ca.crt; do sleep 1; done'
+          base=https://localhost
+          tls=(--cacert /tmp/rafiq-test-ca.crt --retry 5 --retry-connrefused)
+          auth=(-u smoke:rafiq-test-password)
+          for route in / /api/bootstrap /api/projects /api/gpu-notebook; do
+            test "$(curl -sS "${tls[@]}" -o /dev/null -w '%{http_code}' "$base$route")" = 401
+          done
+          config=$(curl -fsS "${tls[@]}" "${auth[@]}" "$base/api/bootstrap")
+          token=$(jq -er 'select(.ffmpeg == true).token' <<< "$config")
+          project=$(curl -fsS "${tls[@]}" "${auth[@]}" -H "Origin: $base" -H "X-Rafiq-Token: $token" \
+            -H 'Content-Type: application/json' -d '{"title":"Deployment test"}' "$base/api/projects")
+          id=$(jq -er .id <<< "$project")
+          docker compose restart studio
+          curl -fsS "${tls[@]}" "${auth[@]}" "$base/api/projects/$id" | jq -e '.title == "Deployment test"'
+      - name: Show deployment logs
+        if: failure()
+        run: docker compose logs
+      - name: Stop test deployment
+        if: always()
+        run: docker compose down -v
