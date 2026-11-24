@@ -23,6 +23,9 @@ jobs:
       - name: Install CPU dependencies
         shell: pwsh
         run: ./rafiq/setup.ps1
-      - name: Verify the engine starts
+      - name: Install studio client dependencies
+        shell: pwsh
+        run: ./.venv/Scripts/python.exe -m pip install -r rafiq/studio/requirements.txt
+      - name: Verify engine startup and native H.264 output
         shell: pwsh
         run: ./.venv/Scripts/python.exe rafiq/smoke.py

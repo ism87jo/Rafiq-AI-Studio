@@ -1,0 +1,8 @@
+{
+  "name": "rafiq-ai-studio-local",
+  "private": true,
+  "version": "0.2.0",
+  "scripts": {
+    "dev": "cd ../.. && python3 -m rafiq.studio --host 0.0.0.0 --port 3000 --data-dir rafiq/studio/.preview-data"
+  }
+}

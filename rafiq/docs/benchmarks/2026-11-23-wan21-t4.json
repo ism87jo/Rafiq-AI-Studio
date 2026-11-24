@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-23",
+  "timezone": "Asia/Amman",
+  "source_commit": "a89a7bb63c746336c983f645a02140f0c2d20fa1",
+  "kind": "real-neural-inference",
+  "preset": "wan21-1.3b",
+  "hardware": {
+    "gpu": "Tesla T4",
+    "vram_bytes": 15637086208,
+    "ram_bytes": 13605818368,
+    "driver": "580.82.07",
+    "python": "3.13.16",
+    "torch": "2.14.1+cu130",
+    "comfyui": "0.44.0"
+  },
+  "settings": {
+    "width": 320,
+    "height": 192,
+    "fps": 16,
+    "seed": 41201,
+    "cfg": 5,
+    "sampler": "uni_pc",
+    "scheduler": "simple",
+    "shift": 8,
+    "text_encoder_device": "default",
+    "style_requested": "3d",
+    "mode": "text"
+  },
+  "weight_repository": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+  "weight_revision": "d6258323e18f14c60d37899da97ca555f3118259",
+  "weights": [
+    {
+      "file": "diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+      "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5"
+    },
+    {
+      "file": "text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68"
+    },
+    {
+      "file": "vae/wan_2.1_vae.safetensors",
+      "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b"
+    }
+  ],
+  "runs": [
+    {
+      "id": "a799135fb0a0439289161ed1a103f2b2",
+      "steps": 8,
+      "planned_seconds": 1,
+      "frames": 17,
+      "duration_seconds": 1.0625,
+      "codec": "h264",
+      "generation_seconds": 41.19525867499999,
+      "elapsed_seconds": 41.84405009499994,
+      "whole_gpu_peak_mib": 10421.0,
+      "video_sha256": "10115513b1db2b0509dd3ca2ec0bd851dee39c88c0af3b503c8501eb01082e01"
+    },
+    {
+      "id": "5b24b88140304096895a90fdd42fc961",
+      "steps": 20,
+      "planned_seconds": 5,
+      "frames": 81,
+      "duration_seconds": 5.0625,
+      "codec": "h264",
+      "generation_seconds": 54.18249757900003,
+      "elapsed_seconds": 54.43373983300012,
+      "whole_gpu_peak_mib": 10389.0,
+      "video_sha256": "e02f87c70a3e3c2fe7c819522ffdb6fcec1c0d49db20f5321708f99890d02eff"
+    },
+    {
+      "id": "58066fa1568441bfa926a876f2d1c93b",
+      "steps": 8,
+      "planned_seconds": 1,
+      "frames": 17,
+      "duration_seconds": 1.0625,
+      "codec": "h264",
+      "generation_seconds": 5.085381520000055,
+      "elapsed_seconds": 5.418343488000119,
+      "whole_gpu_peak_mib": 10389.0,
+      "video_sha256": "f5984e3900135532a3e01eb9118481fa15295d0e08a88776c58f7f31d8879b64",
+      "note": "Extra repeat from a temporary notebook cell retaining an old command; duplicate removed."
+    }
+  ],
+  "initial_failure": {
+    "source_commit": "c363d6921fb06c521233ce87ddcee15e6ac42d4d",
+    "job_id": "7b4c33f0b3884aa6b70779f37325f712",
+    "text_encoder_device": "cpu",
+    "engine_elapsed_seconds": 245.54,
+    "stage": "SaveVideo",
+    "reason": "Nested dynamic inputs were ignored; format argument missing. No saved MP4."
+  },
+  "billing_observation": {
+    "subscribed": false,
+    "compute_units": 0,
+    "paid_resource_started": false
+  },
+  "review": {
+    "played_in_browser": true,
+    "cinematic_3d_approved": false,
+    "character_identity_verified": false,
+    "audio_generated": false,
+    "portable_gpu_roundtrip_verified": false
+  },
+  "media_delivery": {
+    "archive": "Rafiq_GPU_Results_2026-11-23.zip",
+    "location": "temporary Colab runtime",
+    "user_download_pending": true,
+    "bytes_archived_in_repository": false,
+    "automated_transfer": "Download did not complete; embedded-media transfer rejected by browser URL policy."
+  }
+}

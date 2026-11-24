@@ -1,6 +1,10 @@
 # Rafiq AI Studio
 
-Rafiq AI Studio extends ComfyUI toward a bilingual image, video and audio workspace. This foundation adds a Windows CPU setup and a model-free startup check. The upstream web interface is available after startup.
+The runnable bilingual production MVP is in **[studio/README.md](studio/README.md)**. It adds project/storyboard persistence, character/location records, local ComfyUI jobs and real FFmpeg MP4 exports in a separate lightweight environment. See [implementation and repository review](docs/IMPLEMENTATION.md), [model/license review](docs/MODELS.md), and [validation results and GPU limitations](docs/VALIDATION.md).
+
+النسخة العملية الأولى وشرح تشغيلها: **[دليل الاستوديو](studio/README.md)**. تشمل إدارة المشروع والمشاهد والوسائط والتصدير المحلي. نجح توليد مقطعين فعليين باستخدام Wan 2.1 على T4 مجاني بدقة صغيرة؛ راجع [القياسات وحدود الجودة](docs/GPU_BENCHMARK_2026-11-23.md). يتوفر [دفتر اختبار GPU عند توفره مجانًا](notebooks/Rafiq_First_GPU_Test.ipynb).
+
+Rafiq AI Studio extends ComfyUI toward a bilingual image, video and audio workspace. The optional engine setup below includes a Windows CPU startup and native H.264 encoding check without model weights. For the lightweight laptop studio, use the studio guide above; CPU setup is not a GPU video configuration.
 
 ## Windows
 
@@ -10,13 +14,14 @@ Install Git, PowerShell 7 and 64-bit Python 3.13 with the Windows Python launche
 git clone https://github.com/ism87jo/Rafiq-AI-Studio.git
 cd Rafiq-AI-Studio
 git remote add upstream https://github.com/Comfy-Org/ComfyUI.git
-git switch --track origin/rafiq/foundation
+git switch --track origin/feature/rafiq-studio-mvp
 ./rafiq/setup.ps1
+./.venv/Scripts/python.exe -m pip install -r rafiq/studio/requirements.txt
 ./.venv/Scripts/python.exe rafiq/smoke.py
 ./rafiq/start.ps1
 ```
 
-Open <http://127.0.0.1:8188>. Stop the server with Ctrl+C. Setup downloads Python packages. The smoke test starts a separate CPU process, checks `GET /system_stats` and terminates the process. It requires no model weights. After the foundation PR is merged, use `develop` for setup.
+Open <http://127.0.0.1:8188>. Stop the server with Ctrl+C. Setup downloads Python packages. The smoke test starts a separate CPU process, checks `GET /system_stats`, submits the production graph's native saving nodes with a diagnostic image, downloads/decodes H.264 and terminates the process. It requires no model weights. The studio changes remain on the feature branch in draft PR #2; they have not been merged into `develop`.
 
 ## Architecture and first release
 

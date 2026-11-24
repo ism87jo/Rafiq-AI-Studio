@@ -1,0 +1,9 @@
+**
+!rafiq/
+!rafiq/studio/
+!rafiq/studio/**
+!rafiq/notebooks/
+!rafiq/notebooks/Rafiq_GPU_Job.ipynb
+**/__pycache__/
+rafiq/studio/.preview-data/
+rafiq/studio/tests/

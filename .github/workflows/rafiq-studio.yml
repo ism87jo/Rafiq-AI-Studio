@@ -1,0 +1,33 @@
+name: Rafiq Studio integration
+on:
+  pull_request:
+    branches: [develop]
+    paths: ['rafiq/studio/**', 'rafiq/notebooks/**', '.github/workflows/rafiq-studio.yml']
+  push:
+    branches: [develop, feature/rafiq-studio-mvp]
+    paths: ['rafiq/studio/**', 'rafiq/notebooks/**', '.github/workflows/rafiq-studio.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  studio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install studio dependencies
+        run: python -m pip install -r rafiq/studio/requirements.txt
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Check JavaScript syntax
+        run: node --check rafiq/studio/web/studio.js
+      - name: Exercise persistence, ComfyUI protocol fixture and real MP4 editing
+        run: python -m unittest discover -s rafiq/studio/tests -v
