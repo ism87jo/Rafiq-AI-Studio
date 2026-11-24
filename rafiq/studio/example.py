@@ -21,3 +21,34 @@ def first_chapter(project_id="bird-that-fell-silent"):
             {"id": "shot-06", "title": "بداية السؤال", "prompt": "Wide shot of the four characters gathered under the same courtyard tree. Othman sits by his younger brother Hamza, Nizar leans forward thoughtfully, Ismail listens calmly. A quiet cinematic pause as sunset fades. Preserve all four designs and clothing.", "notes": "لقطة جماعية صعبة؛ تأتي بعد نجاح اختبارات شخصية واحدة وشخصيتين.", "seconds": 5, "seed": 41206, "character_ids": ["ismail", "hamza", "othman", "nizar"], "location_id": "courtyard"},
         ],
     })
+
+
+
+def interview_project(project_id):
+    turns = [
+        ("host", "الافتتاح / Opening", "أهلًا بكم. كيف يبدأ المسافر الاستعداد لرحلة الحج؟", 6),
+        ("guest", "الإجابة / Answer", "يبدأ بالاطلاع على الشروط الرسمية ومراجعة الوثائق والخدمات قبل اختيار البرنامج.", 9),
+        ("host", "الختام / Closing", "شكرًا لك. راجعوا المعلومات الرسمية واكتبوا لنا أسئلتكم.", 6),
+    ]
+    return Project.model_validate({
+        "id": project_id,
+        "title": "Rafiq AI Interview Studio — مقابلة جديدة",
+        "style": "realistic",
+        "script": "مسودة بودكاست مصوّر عن الاستعداد للحج. عدّل الحوار وضع صورة لكل متحدث، ثم أرفق الصوت واستمع إليه واضبط زمن اللقطة قبل التصدير.",
+        "characters": [
+            {"id": "host", "name": "المقدّم / Host"},
+            {"id": "guest", "name": "الضيف / Guest"},
+        ],
+        "scenes": [
+            {
+                "id": f"turn-{index}",
+                "title": title,
+                "seconds": seconds,
+                "use_still": True,
+                "character_ids": [speaker],
+                "dialogue": [{"character_id": speaker, "text": line, "language": "ar"}],
+            }
+            for index, (speaker, title, line, seconds) in enumerate(turns, 1)
+        ],
+        "settings": {"width": 1280, "height": 704, "fps": 24},
+    })

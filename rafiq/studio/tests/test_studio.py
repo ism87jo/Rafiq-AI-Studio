@@ -253,6 +253,33 @@ class StudioIntegrationTests(unittest.TestCase):
         self.assertGreaterEqual(float(metadata["format"]["duration"]), 2)
         self.assertEqual(Store(Path(self.directory.name)).project(self.pid)["scenes"][0]["video_asset_id"], video["id"])
 
+    def test_interview_exports_still_with_dialogue_without_engine(self):
+        response = self.post("/api/projects/interview")
+        self.assertEqual(response.status_code, 201)
+        self.project = response.json()
+        self.pid = self.project["id"]
+        self.assertEqual([shot["character_ids"][0] for shot in self.project["scenes"]],
+                         ["host", "guest", "host"])
+        image = BytesIO()
+        Image.new("RGB", (160, 96), "blue").save(image, format="PNG")
+        portrait = self.upload("image", image.getvalue(), "portrait.png", "image/png")
+        speech = self.upload("audio", self.audio, "dialogue.wav", "audio/wav")
+        self.project["settings"].update(width=160, height=96, fps=8)
+        self.project["scenes"] = self.project["scenes"][:1]
+        self.project["scenes"][0].update(seconds=1, reference_asset_id=portrait["id"],
+                                         audio_asset_id=speech["id"], use_still=False)
+        self.save()
+        self.assertEqual(self.post(f"/api/projects/{self.pid}/export").status_code, 422)
+        self.project["scenes"][0]["use_still"] = True
+        self.save()
+        quote = self.post(f"/api/projects/{self.pid}/export").json()
+        result = self.wait_job(self.accept(quote))
+        self.assertEqual(result["state"], "succeeded", result["error"])
+        media = probe(self.app.state.store.path(result["output_asset_id"]))
+        self.assertEqual({stream["codec_name"] for stream in media["streams"]}, {"h264", "aac"})
+        self.assertAlmostEqual(float(media["format"]["duration"]), 1, delta=0.15)
+        self.assertEqual(self.fixture.graphs, [])
+
     def test_cross_project_assets_and_invalid_uploads_are_rejected(self):
         other = self.post("/api/projects", json={"title": "Other"}).json()
         video = self.upload("video", self.video, "clip.mp4", "video/mp4")

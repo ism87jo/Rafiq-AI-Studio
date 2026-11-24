@@ -22,6 +22,10 @@ def normalize_audio(source, target):
     run_media(["ffmpeg", "-y", "-v", "error", "-i", str(source), "-vn", "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", str(target)], timeout=120)
 
 
+def has_export_visual(scene):
+    return bool(scene["video_asset_id"] or (scene.get("use_still") and scene["reference_asset_id"]))
+
+
 def export_movie(store, project, work, output):
     if not project["scenes"]:
         raise ValueError("The storyboard is empty")
@@ -31,13 +35,18 @@ def export_movie(store, project, work, output):
     work.mkdir(parents=True, exist_ok=True)
     files = []
     for index, scene in enumerate(project["scenes"]):
-        if not scene["video_asset_id"]:
-            raise ValueError(f"Scene has no selected video: {scene['title']}")
-        source = store.path(scene["video_asset_id"], project["id"], "video")
-        streams = probe(source)["streams"]
+        if not has_export_visual(scene):
+            raise ValueError(f"Scene has no selected video or enabled still: {scene['title']}")
+        still = not scene["video_asset_id"]
+        asset_id = scene["reference_asset_id"] if still else scene["video_asset_id"]
+        source = store.path(asset_id, project["id"], "image" if still else "video")
+        streams = [] if still else probe(source)["streams"]
         audio = store.path(scene["audio_asset_id"], project["id"], "audio") if scene["audio_asset_id"] else None
         target = work / f"part-{index:04}.mp4"
-        command = ["ffmpeg", "-y", "-v", "error", "-i", str(source)]
+        command = ["ffmpeg", "-y", "-v", "error"]
+        if still:
+            command += ["-loop", "1", "-framerate", str(settings["fps"])]
+        command += ["-i", str(source)]
         if audio:
             command += ["-i", str(audio), "-map", "0:v:0", "-map", "1:a:0"]
         elif any(stream["codec_type"] == "audio" for stream in streams):

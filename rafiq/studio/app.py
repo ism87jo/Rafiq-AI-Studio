@@ -14,8 +14,8 @@ from pydantic import Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .comfy import ComfyClient
-from .example import first_chapter
-from .media import normalize_audio, probe
+from .example import first_chapter, interview_project
+from .media import has_export_visual, normalize_audio, probe
 from .models import Project, Record
 from .portable import create_request, import_result, request_archive
 from .store import Conflict, Store
@@ -145,6 +145,10 @@ def create_app(data_dir=None, engine=None, recover=True):
     def example():
         return store.save_project(first_chapter(uuid.uuid4().hex), create=True)
 
+    @app.post("/api/projects/interview", status_code=201)
+    def new_interview():
+        return store.save_project(interview_project(uuid.uuid4().hex), create=True)
+
     @app.get("/api/projects/{project_id}")
     def get_project(project_id: str):
         return store.project(project_id)
@@ -273,8 +277,8 @@ def create_app(data_dir=None, engine=None, recover=True):
     @app.post("/api/projects/{project_id}/export")
     def quote_export(project_id: str):
         project = store.project(project_id)
-        if not project["scenes"] or any(not scene["video_asset_id"] for scene in project["scenes"]):
-            raise ValueError("Select a video for every scene before exporting")
+        if not project["scenes"] or any(not has_export_visual(scene) for scene in project["scenes"]):
+            raise ValueError("Select a video or enable a scene image for every scene before exporting")
         validate_assets(store, project)
         checked = dict(ready=bool(shutil.which("ffmpeg") and shutil.which("ffprobe")), errors=[])
         if not checked["ready"]:

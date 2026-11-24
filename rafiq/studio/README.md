@@ -24,6 +24,12 @@ python3 -m venv .studio-venv
 .studio-venv/bin/python -m rafiq.studio
 ```
 
+## Rafiq AI Interview Studio
+
+Choose **AI interview template / قالب مقابلة AI** to start a filmed podcast with a host, a guest and editable Arabic dialogue. Each speaking turn is a scene. Upload a scene image and a recorded or externally generated audio track, then match the scene duration to the dialogue. The template enables still-image export, so the studio can assemble a 1280 × 704 MP4 on CPU. If a video take is selected, it takes precedence over the still. Local speech generation remains optional and requires a configured voice engine. Lip sync is a separate production step.
+
+For private hosting, see [the HTTPS deployment guide](../deploy/README.md). A dedicated host such as `studio.rafiqni.com` can run the studio independently of the ride-sharing site.
+
 ## Generate an actual shot
 
 The web studio and GPU engine use separate Python environments. The earlier `rafiq/setup.ps1` deliberately installs CPU PyTorch; that environment alone is **not** a GPU video setup.

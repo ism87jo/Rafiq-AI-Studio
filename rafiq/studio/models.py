@@ -41,6 +41,7 @@ class Scene(Record):
     character_ids: list[str] = Field(default_factory=list, max_length=30)
     location_id: str | None = None
     reference_asset_id: str | None = None
+    use_still: bool = False
     video_asset_id: str | None = None
     audio_asset_id: str | None = None
     dialogue: list[Dialogue] = Field(default_factory=list, max_length=100)
